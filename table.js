@@ -1,8 +1,8 @@
 import { header } from "./configure.js";
-import { setResizeListeners, throttle } from "./throtling.js";
+import {  throttle } from "./throtling.js";
 
-let sortAscending = true;
 let allProducts = [];
+let originalProducts = [];
 let searchContext = {
     field: '',
     customSearch: null
@@ -12,14 +12,49 @@ const popup = document.getElementById("searchPopup");
 const input = document.getElementById("popupSearchInput");
 const searchBtn = popup.querySelector("button:nth-of-type(1)");
 const closeBtn = popup.querySelector("button:nth-of-type(2)");
+const resetBtn = document.getElementById('reset');
+resetBtn.addEventListener("click",()=>{
+    allProducts = [...originalProducts];
+    rowPool = [];
+    const tableBody = table.querySelector('tbody');
+    tableBody.innerHTML = '';
+    tablePadding.style.height = `${allProducts.length * rowHeight}px`;
+    container.removeEventListener('scroll', onScroll);
+
+    setupVirtualScroll();
+})
 export const handleClick = (head,event) =>{
-    if(head.isSort){
-        const {onSort} = head;
-        sortAscending = !sortAscending;
-        // console.log(onSort,'onSort',sortAscending);
-        allProducts.sort((a,b) => onSort(a,b,sortAscending));
-        renderRows(0,allProducts);
-    }  
+    if (head.isSort) {
+        if (head.sortOrder === 'none') {
+            head.sortOrder = 'asc';
+        } else if (head.sortOrder === 'asc') {
+            head.sortOrder = 'desc';
+        } else {
+            head.sortOrder = 'none';
+        }
+
+        const sortFunction = head.onSort;
+        if (head.sortOrder === 'none') {
+            console.log(originalProducts,'original');
+            
+            allProducts = [...originalProducts] 
+        } else if (typeof sortFunction === 'function') {
+            allProducts = sortFunction([...allProducts], head.sortOrder);
+        }
+
+        renderRows(0, allProducts);
+
+        const img = event.target.tagName === 'IMG' ? event.target : event.target.querySelector('img');
+        if (img) {
+            if (head.sortOrder === 'asc') {
+                img.src = './sort-up.png';
+            } else if (head.sortOrder === 'desc') {
+                img.src = './sort-down.png';
+            } else {
+                img.src = './sort.png';
+            }
+        }
+    } 
     else if(head.isSearch){
      popup.classList.remove("displayNone");
      searchContext.field = head.dataIndex;
@@ -40,18 +75,17 @@ let rowHeight = 52;
 let buffer = 10;
 let containerHeight = 500;
 let visibleCount =Math.ceil(containerHeight/rowHeight)+buffer * 2;
-// let virtualTable =  document.querySelector(".virtual-table");
 let tablePadding = document.querySelector('.table-padding')
 let startIndex = 0
 const table = document.createElement('table');
 table.classList.add('fade-in');
  const TableComponent = (response) =>{
+    originalProducts = response;
     allProducts = response;
     tablePadding.style.height = `${allProducts.length * rowHeight}px`;
     console.log(response,'response from table compoennt');
     
     container.innerHTML = '';
-    // table.classList.add('virtual-table');
     const tableHeader = table.createTHead();
     const tableBody  = table.createTBody();
     let row = tableHeader.insertRow();
@@ -74,23 +108,11 @@ table.classList.add('fade-in');
         }
        
         th.appendChild(span)
-        const resizer = document.createElement("div");
-        resizer.className = "resizer";
-        th.appendChild(resizer);
-        setResizeListeners(th, resizer);
         row.appendChild(th)
     })
     // No Data found scenario
     if(allProducts.length == 0){
-      let rowData = tableBody.insertRow();
-      let td = document.createElement('td');
-       td.colSpan = header.length;
-      let image = document.createElement('img');
-      image.src = "./nodatafound.gif";
-      image.alt="nodatafound";
-      image.className ="no-data"
-      td.appendChild(image)
-      rowData.appendChild(td);
+     nodatafound(tableBody)
     }
     else{
         setupVirtualScroll();
@@ -132,66 +154,59 @@ popup.classList.remove("displayBlock");
 input.value = "";
 searchContext.field = '';
 searchContext.customSearch = null;
+allProducts = [...originalProducts]
+renderRows(0,allProducts)
 });
 
+
 const renderRows = (startIdx, data) => {
-    let tableBody = document.createElement('tbody');
-    const oldBody = table.querySelector('tbody');
-    if (oldBody) oldBody.remove();
-
+    const tableBody = table.querySelector('tbody');
     allProducts = data ? data : allProducts;
-
-    const endIdx = Math.min(allProducts.length, startIdx + visibleCount);
-    const fragment = document.createDocumentFragment();
+console.log(allProducts,'allproducts from render row');
 
     if (allProducts.length === 0) {
-        let rowData = tableBody.insertRow();
-        let td = document.createElement('td');
-        td.colSpan = header.length;
-        let image = document.createElement('img');
-        image.src = "./nodatafound.gif";
-        image.alt = "nodatafound";
-        image.className = "no-data";
-        td.appendChild(image);
-        rowData.appendChild(td);
-    } else {
-        // 👇 Add the padding row to simulate vertical offset
-        const paddingRow = document.createElement('tr');
-        paddingRow.style.height = `${startIdx * rowHeight}px`;
-        paddingRow.style.pointerEvents = "none";
-        paddingRow.style.visbility = "hidden";
+        nodatafound(tableBody);
+        return; // Stop rendering if no data is found
+    }
 
-        let td = document.createElement('td');
-        td.colSpan = header.length;
-        paddingRow.appendChild(td);
-        tableBody.appendChild(paddingRow); // 👈 Append padding row first
+    const noDataRow = tableBody.querySelector('.no-data-row');
+    if (noDataRow) {
+        tableBody.removeChild(noDataRow);
+    }
 
-        // 👇 Now add visible rows
-        for (let i = startIdx; i < endIdx; i++) {
-            const d = allProducts[i];
-            let rowData = document.createElement('tr');
+    // createPool(tableBody)
+    const endIdx = Math.min(allProducts.length, startIdx + visibleCount);
+    const rowsToRender = endIdx - startIdx;
 
-            header.forEach((h) => {
-                let cell = document.createElement('td');
+    for (let i = 0; i < rowPool.length; i++) {
+        const row = rowPool[i];
+        console.log(rowPool[i],'rowpool',endIdx,rowsToRender);
+        
+        if (i < rowsToRender) {
+            const d = allProducts[startIdx + i];
+            const cells = row.children;
+            
+            header.forEach((h, idx) => {
                 const value = d[h.dataIndex];
                 if (typeof h.onRender === "function") {
                     const customEl = h.onRender(value);
-                    cell.appendChild(
+                    cells[idx].innerHTML = ''; // clear old content
+                    cells[idx].appendChild(
                         customEl instanceof HTMLElement ? customEl : document.createTextNode(customEl || 'NA')
                     );
                 } else {
-                    cell.textContent = value || 'NA';
+                    cells[idx].textContent = value || 'NA';
                 }
-                rowData.appendChild(cell);
             });
 
-            fragment.appendChild(rowData);
+            row.style.display = ''; // show row
+        } else {
+            row.style.display = 'none'; // hide extra rows
         }
-
-        tableBody.appendChild(fragment); // 👈 Append data rows after padding
     }
 
-    table.appendChild(tableBody);
+    const translateY = startIdx * rowHeight;
+    tableBody.style.transform = `translateY(${translateY}px)`;
 };
 
 const onScroll = throttle(() => {
@@ -200,11 +215,45 @@ const onScroll = throttle(() => {
     renderRows(startIndex);
 }, 100); 
 
+let rowPool = []; // pool of reusable tr elements
+
 const setupVirtualScroll = () => {
     const totalHeight = allProducts.length * rowHeight;
     tablePadding.style.height = `${totalHeight}px`;
+    visibleCount = Math.ceil(container.clientHeight / rowHeight) + buffer * 2;
 
-    container.addEventListener('scroll',onScroll)
+    const tableBody = table.querySelector('tbody');
+    tableBody.innerHTML = ''; // clear any old data
 
+    // 1. Create a pool of reusable rows
+    createPool(tableBody)
+    container.addEventListener('scroll', onScroll);
     renderRows(0);
 };
+
+const nodatafound = (tableBody) => {
+    tableBody.innerHTML=''
+    let rowData = tableBody.insertRow();
+    rowData.classList.add('no-data-row'); 
+    let td = document.createElement('td');
+    td.colSpan = header.length;
+    let image = document.createElement('img');
+    image.src = "./nodatafound.gif";
+    image.alt = "No data found";
+    image.className = "no-data";
+    td.appendChild(image);
+    rowData.appendChild(td);
+};
+
+const createPool = (tableBody) =>{
+    for (let i = 0; i < visibleCount; i++) {
+        const row = document.createElement('tr');
+        header.forEach(() => {
+            const cell = document.createElement('td');
+            row.appendChild(cell);
+        });
+        tableBody.appendChild(row);
+        rowPool.push(row);
+    }
+
+}

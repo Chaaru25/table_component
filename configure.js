@@ -12,12 +12,15 @@ export const header = [
         width:"20%",
         icon:"./sort.png",
         isSort:true,
-        onSort: (a, b, ascending) => {
-            return ascending
-              ? a.name.localeCompare(b.name)
-              : b.name.localeCompare(a.name);
-          }
-        
+        sortOrder: 'none', 
+        onSort: (data, order) => {
+            if (order === 'none') return [...data];
+            return [...data].sort((a, b) => 
+                order === 'asc' 
+                    ? a.name.localeCompare(b.name)
+                    : b.name.localeCompare(a.name)
+            );
+        }
     },
     {
         title:"Email",
@@ -35,11 +38,15 @@ export const header = [
         icon:"./sort.png",
          width:"20%",
         isSort:true,
-        onSort: (a, b, ascending) => {
-            return ascending
-              ? a.gender.localeCompare(b.gender)
-              : b.gender.localeCompare(a.gender);
-          },
+        sortOrder: 'none',
+        onSort: (data, order) => {
+            if (order === 'none') return [...data];
+            return [...data].sort((a, b) => 
+                order === 'asc' 
+                    ? a.gender.localeCompare(b.gender)
+                    : b.gender.localeCompare(a.gender)
+            );
+        },
         onRender: (value) => {
             
             const img = document.createElement('img');

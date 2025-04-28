@@ -1,6 +1,6 @@
 
 .container{
-    max-height: 600px;
+    max-height: 500px;
     min-height: 400px;
     overflow-y: auto;
     scroll-behavior: smooth;
@@ -45,14 +45,15 @@ thead, th{
     top: 0;
     background-color:#e9e9e9;
     z-index: 10;
-    cursor:col-resize
 }
 th{
     padding: 20px;
     text-align: start;
-   border-left: 1px solid #cbbfbf;
 
     
+}
+tbody {
+  will-change: transform;
 }
 td{
    padding: 15px;
@@ -67,17 +68,9 @@ td{
     background-color: #e495e4;
   } */
 
-  .resizer {
-    width: 5px;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    right: 0;
-    cursor: col-resize;
-    user-select: none;
-    z-index: 10;
+button#reset{
+    margin: 10px;
 }
-
   
   .header-title {
     display: inline-block;
@@ -92,8 +85,8 @@ td{
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   vertical-align: middle;
   cursor: pointer;
 }
@@ -156,14 +149,14 @@ td{
       background-color: rgb(84, 84, 238);
       border-radius: 10px;
   }
-  .close-btn{
+  .reset-btn{
     border-radius: 10px;
   }
   .no-data{
     display: block;
     margin: 0 auto;
-    max-width: 300px; /* or any size you prefer */
-    height: 300px;
+    max-width: 100%; /* or any size you prefer */
+    height: 600px;
   }
   .gender-icon{
     width: 20px;
