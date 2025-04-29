@@ -13,77 +13,20 @@ const input = document.getElementById("popupSearchInput");
 const searchBtn = popup.querySelector("button:nth-of-type(1)");
 const closeBtn = popup.querySelector("button:nth-of-type(2)");
 const resetBtn = document.getElementById('reset');
-resetBtn.addEventListener("click",()=>{
-    allProducts = [...originalProducts];
-    rowPool = [];
-    const tableBody = table.querySelector('tbody');
-    tableBody.innerHTML = '';
-    tablePadding.style.height = `${allProducts.length * rowHeight}px`;
-    container.removeEventListener('scroll', onScroll);
 
-    setupVirtualScroll();
-})
-export const handleClick = (head,event) =>{
-    if (head.isSort) {
-        if (head.sortOrder === 'none') {
-            head.sortOrder = 'asc';
-        } else if (head.sortOrder === 'asc') {
-            head.sortOrder = 'desc';
-        } else {
-            head.sortOrder = 'none';
-        }
-
-        const sortFunction = head.onSort;
-        if (head.sortOrder === 'none') {
-            console.log(originalProducts,'original');
-            
-            allProducts = [...originalProducts] 
-        } else if (typeof sortFunction === 'function') {
-            allProducts = sortFunction([...allProducts], head.sortOrder);
-        }
-
-        renderRows(0, allProducts);
-
-        const img = event.target.tagName === 'IMG' ? event.target : event.target.querySelector('img');
-        if (img) {
-            if (head.sortOrder === 'asc') {
-                img.src = './sort-up.png';
-            } else if (head.sortOrder === 'desc') {
-                img.src = './sort-down.png';
-            } else {
-                img.src = './sort.png';
-            }
-        }
-    } 
-    else if(head.isSearch){
-     popup.classList.remove("displayNone");
-     searchContext.field = head.dataIndex;
-     searchContext.customSearch = head.onSearch;
-   
-   
-     const rect = event.target.getBoundingClientRect();
-   
-     popup.style.top = `${(rect.bottom+ window.scrollY)+10 }px`;
-     popup.style.left = `${(rect.left + window.scrollX)-250}px`;
-   
-     input.value = ""; 
-    
-     popup.classList.add("displayBlock");
-    } 
-}
 let rowHeight = 52;
 let buffer = 10;
 let containerHeight = 500;
 let visibleCount =Math.ceil(containerHeight/rowHeight)+buffer * 2;
 let tablePadding = document.querySelector('.table-padding')
-let startIndex = 0
 const table = document.createElement('table');
 table.classList.add('fade-in');
+
  const TableComponent = (response) =>{
     originalProducts = response;
     allProducts = response;
     tablePadding.style.height = `${allProducts.length * rowHeight}px`;
-    console.log(response,'response from table compoennt');
+    // console.log(response,'response from table compoennt');
     
     container.innerHTML = '';
     const tableHeader = table.createTHead();
@@ -124,10 +67,10 @@ return table;
 
 
 export default TableComponent;
-
+// searchbtn function
 searchBtn.addEventListener("click",() =>{
     const query = input.value.toLowerCase();
-    console.log(query,'query fom search');
+    // console.log(query,'query fom search');
     
     if(!searchContext.field) return;
     let filtered = allProducts.filter(item =>{
@@ -135,38 +78,36 @@ searchBtn.addEventListener("click",() =>{
             return searchContext.customSearch(item,query)
         }
         const value = item[searchContext.field]
-        console.log(value,'value from search');
+        // console.log(value,'value from search');
         
         return value?.toString().toLowerCase().includes(query);
     })
     renderRows(0,filtered)
-// Close modal
+
 popup.classList.add("displayNone");
 popup.classList.remove("displayBlock");
 input.value = "";
 searchContext.field = '';
 searchContext.customSearch = null;
 });
-
+// close button function
 closeBtn.addEventListener("click", () => {
 popup.classList.add("displayNone");
 popup.classList.remove("displayBlock");
 input.value = "";
 searchContext.field = '';
 searchContext.customSearch = null;
-allProducts = [...originalProducts]
-renderRows(0,allProducts)
 });
 
-
+// render rows
 const renderRows = (startIdx, data) => {
     const tableBody = table.querySelector('tbody');
     allProducts = data ? data : allProducts;
-console.log(allProducts,'allproducts from render row');
+// console.log(allProducts,'allproducts from render row');
 
     if (allProducts.length === 0) {
         nodatafound(tableBody);
-        return; // Stop rendering if no data is found
+        return; 
     }
 
     const noDataRow = tableBody.querySelector('.no-data-row');
@@ -174,13 +115,12 @@ console.log(allProducts,'allproducts from render row');
         tableBody.removeChild(noDataRow);
     }
 
-    // createPool(tableBody)
     const endIdx = Math.min(allProducts.length, startIdx + visibleCount);
     const rowsToRender = endIdx - startIdx;
 
     for (let i = 0; i < rowPool.length; i++) {
         const row = rowPool[i];
-        console.log(rowPool[i],'rowpool',endIdx,rowsToRender);
+        // console.log(rowPool[i],'rowpool',endIdx,rowsToRender);
         
         if (i < rowsToRender) {
             const d = allProducts[startIdx + i];
@@ -201,14 +141,14 @@ console.log(allProducts,'allproducts from render row');
 
             row.style.display = ''; // show row
         } else {
-            row.style.display = 'none'; // hide extra rows
+            row.style.display = 'none'; 
         }
     }
 
     const translateY = startIdx * rowHeight;
     tableBody.style.transform = `translateY(${translateY}px)`;
 };
-
+// scroll function
 const onScroll = throttle(() => {
     const scrollTop = container.scrollTop;
     const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - buffer);
@@ -223,14 +163,12 @@ const setupVirtualScroll = () => {
     visibleCount = Math.ceil(container.clientHeight / rowHeight) + buffer * 2;
 
     const tableBody = table.querySelector('tbody');
-    tableBody.innerHTML = ''; // clear any old data
-
-    // 1. Create a pool of reusable rows
+    tableBody.innerHTML = ''; 
     createPool(tableBody)
     container.addEventListener('scroll', onScroll);
     renderRows(0);
 };
-
+// no data found function
 const nodatafound = (tableBody) => {
     tableBody.innerHTML=''
     let rowData = tableBody.insertRow();
@@ -244,7 +182,7 @@ const nodatafound = (tableBody) => {
     td.appendChild(image);
     rowData.appendChild(td);
 };
-
+// createpool
 const createPool = (tableBody) =>{
     for (let i = 0; i < visibleCount; i++) {
         const row = document.createElement('tr');
@@ -256,4 +194,63 @@ const createPool = (tableBody) =>{
         rowPool.push(row);
     }
 
+}
+resetBtn.addEventListener("click",()=>{
+    allProducts = [...originalProducts];
+    rowPool = [];
+    const tableBody = table.querySelector('tbody');
+    tableBody.innerHTML = '';
+    tablePadding.style.height = `${allProducts.length * rowHeight}px`;
+    container.removeEventListener('scroll', onScroll);
+
+    setupVirtualScroll();
+})
+// handleclick function
+export const handleClick = (head,event) =>{
+    if (head.isSort) {
+        if (head.sortOrder === 'none') {
+            head.sortOrder = 'asc';
+        } else if (head.sortOrder === 'asc') {
+            head.sortOrder = 'desc';
+        } else {
+            head.sortOrder = 'none';
+        }
+
+        const sortFunction = head.onSort;
+        if (head.sortOrder === 'none') {
+            // console.log(originalProducts,'original');
+            
+            allProducts = [...originalProducts] 
+        } else if (typeof sortFunction === 'function') {
+            allProducts = sortFunction([...allProducts], head.sortOrder);
+        }
+
+        renderRows(0, allProducts);
+
+        const img = event.target.tagName === 'IMG' ? event.target : event.target.querySelector('img');
+        if (img) {
+            if (head.sortOrder === 'asc') {
+                img.src = './sort-up.png';
+            } else if (head.sortOrder === 'desc') {
+                img.src = './sort-down.png';
+            } else {
+                img.src = './sort.png';
+            }
+        }
+    } 
+    else if(head.isSearch){
+     popup.classList.remove("displayNone");
+     searchContext.field = head.dataIndex;
+     searchContext.customSearch = head.onSearch;
+   
+   
+     const rect = event.target.getBoundingClientRect();
+   
+     popup.style.top = `${(rect.bottom+ window.scrollY)+10 }px`;
+     popup.style.left = `${(rect.left + window.scrollX)-250}px`;
+   
+     input.value = ""; 
+    
+     popup.classList.add("displayBlock");
+    } 
 }
