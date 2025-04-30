@@ -163,7 +163,6 @@ const setupVirtualScroll = () => {
     visibleCount = Math.ceil(container.clientHeight / rowHeight) + buffer * 2;
 
     const tableBody = table.querySelector('tbody');
-    tableBody.innerHTML = ''; 
     createPool(tableBody)
     container.addEventListener('scroll', onScroll);
     renderRows(0);
@@ -230,11 +229,11 @@ export const handleClick = (head,event) =>{
         const img = event.target.tagName === 'IMG' ? event.target : event.target.querySelector('img');
         if (img) {
             if (head.sortOrder === 'asc') {
-                img.src = './sort-up.png';
+                img.src = head.sortAscIcon;
             } else if (head.sortOrder === 'desc') {
-                img.src = './sort-down.png';
+                img.src = head.sortDesIcon;
             } else {
-                img.src = './sort.png';
+                img.src = icon;
             }
         }
     } 
